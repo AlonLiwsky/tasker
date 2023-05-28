@@ -9,12 +9,13 @@ import (
 
 type DataBase interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
 type Repository interface {
-	CreateTask(ctx context.Context, task service.Task) (int, error)
+	SaveTask(ctx context.Context, task service.Task) (service.Task, error)
 	SaveExecution(ctx context.Context, execution service.Execution) error
 }
 

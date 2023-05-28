@@ -102,3 +102,9 @@ func createTables(db *sql.DB) error {
 
 	return nil
 }
+
+/* TO DO:
+-Continue and check save methods
+-Make service logic
+-...
+*/

@@ -3,19 +3,22 @@ package service
 import "time"
 
 type Task struct {
-	ID        int
-	Name      string
-	FirstStep *Step
+	ID    int
+	Name  string
+	Steps []Step
 }
 
+type StepType string
+
+//TODO: create const
+
 type Step struct {
-	ID              int
-	Task            *Task
-	SuccessNextStep *Step
-	FailureNextStep *Step
-	StepID          int
-	Params          string
-	FinalStep       bool
+	ID          int
+	Task        *Task
+	Type        StepType
+	Params      string
+	FailureStep *Step //TBD: []Step
+	//A failure step should be executed by a different function that handles it owns errors and retries preventing infinite loops
 }
 
 type ScheduledTask struct {
