@@ -106,5 +106,7 @@ func createTables(db *sql.DB) error {
 /* TO DO:
 -Continue and check save methods
 -Make service logic
+-Handle rollbacks
+-Handle idempotency
 -...
 */

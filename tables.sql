@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS step (
                                     step_type VARCHAR(255) NOT NULL,
     params VARCHAR(255),
     failure_step INT,
-    position INT NOT NULL,
+    position INT,
     FOREIGN KEY (task_id) REFERENCES task(id),
     FOREIGN KEY (failure_step) REFERENCES step(id),
     INDEX idx_position (position)

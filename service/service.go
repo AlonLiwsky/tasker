@@ -1,6 +1,9 @@
 package service
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type Storage interface {
 	SaveTask(ctx context.Context, task Task) (Task, error)
@@ -15,8 +18,16 @@ type service struct {
 }
 
 func (s service) CreateTask(ctx context.Context, task Task) (Task, error) {
-	//Check logical integrity?
-	panic("implement me")
+	if err := task.IsValid(); err != nil {
+		return Task{}, err
+	}
+
+	task, err := s.storage.SaveTask(ctx, task)
+	if err != nil {
+		return Task{}, fmt.Errorf("creating task: %w", err)
+	}
+
+	return task, nil
 }
 
 func NewService(str Storage) Service {

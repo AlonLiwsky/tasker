@@ -1,6 +1,9 @@
 package service
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Task struct {
 	ID    int
@@ -8,17 +11,47 @@ type Task struct {
 	Steps []Step
 }
 
+func (t Task) IsValid() error {
+	if t.Name == "" {
+		return errors.New("task must have a name")
+	}
+
+	if len(t.Steps) == 0 {
+		return errors.New("task must have steps")
+	}
+
+	for _, step := range t.Steps {
+		if err := step.IsValid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type StepType string
 
 //TODO: create const
 
 type Step struct {
-	ID          int
-	Task        *Task
+	ID int
+	//Task        *Task
 	Type        StepType
-	Params      string
-	FailureStep *Step //TBD: []Step
+	Params      map[string]string
+	FailureStep *Step `json:"failure_step"`
 	//A failure step should be executed by a different function that handles it owns errors and retries preventing infinite loops
+}
+
+func (s Step) IsValid() error {
+	if s.Type == "" {
+		return errors.New("step must have a type")
+	}
+
+	if len(s.Params) == 0 {
+		return errors.New("step must have a params")
+	}
+
+	return nil
 }
 
 type ScheduledTask struct {

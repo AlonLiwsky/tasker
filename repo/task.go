@@ -2,8 +2,11 @@ package repo
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/tasker/service"
 )
@@ -16,7 +19,7 @@ const (
 func (r repository) SaveTask(ctx context.Context, task service.Task) (service.Task, error) {
 	result, err := r.db.ExecContext(ctx, InsertTaskQr, task.Name)
 	if err != nil {
-		return service.Task{}, fmt.Errorf("inserting event: %w", err)
+		return service.Task{}, fmt.Errorf("inserting task: %w", err)
 	}
 	rAffect, err := result.RowsAffected()
 	if err != nil {
@@ -27,9 +30,13 @@ func (r repository) SaveTask(ctx context.Context, task service.Task) (service.Ta
 	}
 
 	auxID, err := result.LastInsertId()
+	if err != nil {
+		return service.Task{}, err
+	}
+
 	task.ID = int(auxID)
 
-	steps, err := r.saveSteps(ctx, task.Steps)
+	steps, err := r.saveSteps(ctx, task.Steps, task.ID)
 	if err != nil {
 		return service.Task{}, err
 	}
@@ -38,7 +45,7 @@ func (r repository) SaveTask(ctx context.Context, task service.Task) (service.Ta
 	return task, err
 }
 
-func (r repository) saveSteps(ctx context.Context, steps []service.Step) ([]service.Step, error) {
+func (r repository) saveSteps(ctx context.Context, steps []service.Step, taskID int) ([]service.Step, error) {
 	//Save each step with the Order field
 
 	// Prepare the SQL statement
@@ -50,17 +57,22 @@ func (r repository) saveSteps(ctx context.Context, steps []service.Step) ([]serv
 
 	// Iterate over the rows and execute the prepared statement in a batch
 	for position, step := range steps {
-		var failureStepID *int = nil
+		var failureStep *service.Step = nil
 		if step.FailureStep != nil {
-			*failureStepID, err = insertFailureStep(ctx, *step.FailureStep)
+			failureStep, err = r.insertFailureStep(ctx, *step.FailureStep, taskID)
 			if err != nil {
 				return []service.Step{}, err //TODO: proper error handling
 			}
 		}
 
-		result, err := stmt.Exec(step.Task.ID, step.Type, step.Params, failureStepID, position)
+		var result sql.Result = nil
+		if failureStep != nil {
+			result, err = stmt.Exec(taskID, step.Type, toJSON(step.Params), failureStep.ID, position)
+		} else {
+			result, err = stmt.Exec(taskID, step.Type, toJSON(step.Params), nil, position)
+		}
 		if err != nil {
-			// Handle the error
+			return []service.Step{}, err
 		}
 		id, err := result.LastInsertId()
 		if err != nil {
@@ -68,12 +80,40 @@ func (r repository) saveSteps(ctx context.Context, steps []service.Step) ([]serv
 		}
 
 		steps[position].ID = int(id)
-		steps[position].FailureStep.ID = *failureStepID
+		steps[position].FailureStep = failureStep
 	}
 
 	return steps, err
 }
 
-func insertFailureStep(ctx context.Context, step service.Step) (int, error) {
-	panic("implement me")
+func (r repository) insertFailureStep(ctx context.Context, step service.Step, taskID int) (*service.Step, error) {
+	step.FailureStep = nil //Only one failure step
+	result, err := r.db.ExecContext(ctx, InsertStepQr, taskID, step.Type, toJSON(step.Params), nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("inserting failure step: %w", err)
+	}
+	rAffect, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rAffect != 1 {
+		return nil, errors.New(fmt.Sprintf("rows affected while inserting failure step different than 1: %v", rAffect))
+	}
+
+	auxID, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	step.ID = int(auxID)
+
+	return &step, nil
+}
+
+func toJSON(v any) string {
+	jsonData, err := json.Marshal(v)
+	if err != nil {
+		log.Println("Error marshaling JSON:", err)
+		return ""
+	}
+	return string(jsonData)
 }
