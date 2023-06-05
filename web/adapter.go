@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/tasker/service"
+	"github.com/tasker/entities"
+	httpErr "github.com/tasker/http"
 )
 
 type Service interface {
-	CreateTask(ctx context.Context, task service.Task) (service.Task, error)
+	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 }
 
 type adapter struct {
@@ -20,28 +21,33 @@ type adapter struct {
 func (a adapter) CreateTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	receivedTask := service.Task{}
+	receivedTask := entities.Task{}
 	if err := decode(r, &receivedTask); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request. There is an error in your JSON body: %s", err.Error()), http.StatusBadRequest)
+		httpErr.JSONHandleError(w, httpErr.WrapError(err, httpErr.ErrBadRequest))
+		return
+	}
+
+	if err := receivedTask.IsValid(); err != nil {
+		httpErr.JSONHandleError(w, err)
 		return
 	}
 
 	task, err := a.service.CreateTask(ctx, receivedTask)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Internal Server Error: %s", err.Error()), http.StatusInternalServerError)
+		httpErr.JSONHandleError(w, err)
 		return
 	}
 
 	taskJSON, err := json.Marshal(task)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding task as JSON: %s", err.Error()), http.StatusInternalServerError)
+		httpErr.JSONHandleError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write([]byte(fmt.Sprintf(`{"msg": "task saved successfully", "task": %s}`, taskJSON)))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpErr.JSONHandleError(w, err)
 		return
 	}
 }

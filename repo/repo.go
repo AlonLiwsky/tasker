@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/tasker/service"
+	"github.com/tasker/entities"
 )
 
 type DataBase interface {
@@ -12,22 +12,27 @@ type DataBase interface {
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
 type Repository interface {
-	SaveTask(ctx context.Context, task service.Task) (service.Task, error)
-	SaveExecution(ctx context.Context, execution service.Execution) error
+	SaveTask(ctx context.Context, task entities.Task) (entities.Task, error)
+	SaveExecution(ctx context.Context, execution entities.Execution) error
 }
 
 type repository struct {
-	db DataBase
+	db dbTransactionAware
 }
 
-func (r repository) SaveExecution(ctx context.Context, execution service.Execution) error {
+func (r repository) SaveExecution(ctx context.Context, execution entities.Execution) error {
 	//TODO implement me
 	panic("implement me")
 }
 
 func NewRepository(db DataBase) Repository {
-	return &repository{db: db}
+	return &repository{
+		db: dbTransactionAware{
+			db: db,
+		},
+	}
 }

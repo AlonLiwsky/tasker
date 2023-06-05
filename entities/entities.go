@@ -1,8 +1,10 @@
-package service
+package entities
 
 import (
 	"errors"
 	"time"
+
+	"github.com/tasker/http"
 )
 
 type Task struct {
@@ -13,11 +15,11 @@ type Task struct {
 
 func (t Task) IsValid() error {
 	if t.Name == "" {
-		return errors.New("task must have a name")
+		return http.WrapError(errors.New("task must have a name"), http.ErrBadRequest)
 	}
 
 	if len(t.Steps) == 0 {
-		return errors.New("task must have steps")
+		return http.WrapError(errors.New("task must have steps"), http.ErrBadRequest)
 	}
 
 	for _, step := range t.Steps {
@@ -31,11 +33,12 @@ func (t Task) IsValid() error {
 
 type StepType string
 
-//TODO: create const
+const (
+	APICallStepType StepType = "api_call"
+)
 
 type Step struct {
-	ID int
-	//Task        *Task
+	ID          int
 	Type        StepType
 	Params      map[string]string
 	FailureStep *Step `json:"failure_step"`
@@ -43,12 +46,15 @@ type Step struct {
 }
 
 func (s Step) IsValid() error {
-	if s.Type == "" {
-		return errors.New("step must have a type")
+	validTypes := map[StepType]bool{
+		APICallStepType: true,
+	}
+	if !validTypes[s.Type] {
+		return http.WrapError(errors.New("step must have a valid step type"), http.ErrBadRequest)
 	}
 
 	if len(s.Params) == 0 {
-		return errors.New("step must have a params")
+		return http.WrapError(errors.New("step must have a params"), http.ErrBadRequest)
 	}
 
 	return nil

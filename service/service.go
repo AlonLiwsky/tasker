@@ -3,28 +3,26 @@ package service
 import (
 	"context"
 	"fmt"
+
+	"github.com/tasker/entities"
 )
 
 type Storage interface {
-	SaveTask(ctx context.Context, task Task) (Task, error)
+	SaveTask(ctx context.Context, task entities.Task) (entities.Task, error)
 }
 
 type Service interface {
-	CreateTask(ctx context.Context, task Task) (Task, error)
+	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 }
 
 type service struct {
 	storage Storage
 }
 
-func (s service) CreateTask(ctx context.Context, task Task) (Task, error) {
-	if err := task.IsValid(); err != nil {
-		return Task{}, err
-	}
-
+func (s service) CreateTask(ctx context.Context, task entities.Task) (entities.Task, error) {
 	task, err := s.storage.SaveTask(ctx, task)
 	if err != nil {
-		return Task{}, fmt.Errorf("creating task: %w", err)
+		return entities.Task{}, fmt.Errorf("saving task: %w", err)
 	}
 
 	return task, nil
