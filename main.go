@@ -50,6 +50,7 @@ func main() {
 
 	r.Route("/task", func(r chi.Router) {
 		r.Post("/", adapter.CreateTask) // POST /articles
+		r.Get("/{taskID}", adapter.GetTask)
 	})
 
 	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
@@ -104,9 +105,7 @@ func createTables(db *sql.DB) error {
 }
 
 /* TO DO:
--Continue and check save methods
--Make service logic
--Handle rollbacks
+-Continue with get task endpoint
 -Handle idempotency
 -...
 */

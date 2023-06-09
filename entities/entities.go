@@ -8,9 +8,9 @@ import (
 )
 
 type Task struct {
-	ID    int
-	Name  string
-	Steps []Step
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Steps []Step `json:"steps"`
 }
 
 func (t Task) IsValid() error {
@@ -38,10 +38,10 @@ const (
 )
 
 type Step struct {
-	ID          int
-	Type        StepType
-	Params      map[string]string
-	FailureStep *Step `json:"failure_step"`
+	ID          int               `json:"id"`
+	Type        StepType          `json:"type"`
+	Params      map[string]string `json:"params"`
+	FailureStep *Step             `json:"failure_step"`
 	//A failure step should be executed by a different function that handles it owns errors and retries preventing infinite loops
 }
 
@@ -55,6 +55,11 @@ func (s Step) IsValid() error {
 
 	if len(s.Params) == 0 {
 		return http.WrapError(errors.New("step must have a params"), http.ErrBadRequest)
+	}
+
+	//check for nested failure steps
+	if s.FailureStep != nil && s.FailureStep.FailureStep != nil {
+		return http.WrapError(errors.New("a failure step cant have its own failure step"), http.ErrBadRequest)
 	}
 
 	return nil

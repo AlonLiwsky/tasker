@@ -30,16 +30,16 @@ func (d dbTransactionAware) PrepareContext(ctx context.Context, query string) (*
 
 func (d dbTransactionAware) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	if tx := getTx(ctx); tx != nil {
-		return tx.QueryRowContext(ctx, query, args)
+		return tx.QueryRowContext(ctx, query, args...)
 	}
-	return d.db.QueryRowContext(ctx, query, args)
+	return d.db.QueryRowContext(ctx, query, args...)
 }
 
 func (d dbTransactionAware) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	if tx := getTx(ctx); tx != nil {
-		return tx.QueryContext(ctx, query, args)
+		return tx.QueryContext(ctx, query, args...)
 	}
-	return d.db.QueryContext(ctx, query, args)
+	return d.db.QueryContext(ctx, query, args...)
 }
 
 func (d dbTransactionAware) Begin(ctx context.Context) (context.Context, error) {

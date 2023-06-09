@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-//DebugMode writes the response to the requests with the full error message, if set to false returns user-friendly messages
+// DebugMode writes the response to the requests with the full error message, if set to false returns user-friendly messages
 const DebugMode = true
 
 type Error interface {
@@ -40,11 +40,16 @@ type apiError struct {
 	status int
 }
 
-func (a *apiError) Error() string {
+func (a apiError) Error() string {
 	return a.msg
 }
 
-func (a *apiError) StatusAndMsg() (int, string) {
+func (a apiError) WithMessage(msg string) apiError {
+	a.msg = msg
+	return a
+}
+
+func (a apiError) StatusAndMsg() (int, string) {
 	return a.status, a.msg
 }
 
