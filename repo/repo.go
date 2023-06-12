@@ -18,16 +18,11 @@ type DataBase interface {
 type Repository interface {
 	SaveTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
-	SaveExecution(ctx context.Context, execution entities.Execution) error
+	SaveExecution(ctx context.Context, exec entities.Execution) (entities.Execution, error)
 }
 
 type repository struct {
 	db dbTransactionAware
-}
-
-func (r repository) SaveExecution(ctx context.Context, execution entities.Execution) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 func NewRepository(db DataBase) Repository {

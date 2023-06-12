@@ -37,6 +37,12 @@ const (
 	APICallStepType StepType = "api_call"
 )
 
+func GetAllStepTypes() []StepType {
+	return []StepType{
+		APICallStepType,
+	}
+}
+
 type Step struct {
 	ID          int               `json:"id"`
 	Type        StepType          `json:"type"`
@@ -76,12 +82,25 @@ type ScheduledTask struct {
 	FirstRun    time.Time
 }
 
+type executionStatus string
+
+const (
+	SuccessExecutionStatus        = executionStatus("success")
+	FailureExecutionStatus        = executionStatus("failure")
+	HandledFailureExecutionStatus = executionStatus("handled_failure")
+)
+
 type Execution struct {
-	ID                   int
-	ScheduledTask        *ScheduledTask
-	TryNumber            int
-	Status               string
-	RequestedTime        time.Time
-	ExecutedTime         time.Time
-	LastStatusChangeTime time.Time
+	ID            int `json:"id"`
+	ScheduledTask int `json:"scheduled_task"`
+	//TryNumber            int
+	Status executionStatus `json:"status"`
+	//RequestedTime        time.Time
+	ExecutedTime time.Time `json:"executed_time"`
+	//LastStatusChangeTime time.Time
 }
+
+/*
+Who makes the retries?
+if it's the one calling execute, execution doesn't need TryNumber, RequestedTime and LastStatusChangeTime
+*/

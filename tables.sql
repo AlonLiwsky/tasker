@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS scheduled_task (
 
 CREATE TABLE IF NOT EXISTS execution (
                                          id INT PRIMARY KEY AUTO_INCREMENT,
-                                         scheduled_task_id INT NOT NULL,
-                                         try_number INT NOT NULL,
+                                         scheduled_task_id INT,
+                                         try_number INT,
                                          status VARCHAR(255) NOT NULL,
     requested_time DATETIME,
     executed_time DATETIME,

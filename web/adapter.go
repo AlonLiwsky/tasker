@@ -15,6 +15,7 @@ import (
 type Service interface {
 	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
+	ExecuteTask(ctx context.Context, taskID int, scheduleID int) (entities.Execution, error)
 }
 
 type adapter struct {
@@ -78,6 +79,41 @@ func (a adapter) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(taskJSON)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+}
+
+func (a adapter) ExecuteTask(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	taskID, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+	if err != nil {
+		httpErr.JSONHandleError(w, httpErr.WrapError(err, httpErr.ErrBadRequest.WithMessage("invalid task ID")))
+		return
+	}
+
+	schID, err := strconv.Atoi(chi.URLParam(r, "scheduleID"))
+	if err != nil {
+		httpErr.JSONHandleError(w, httpErr.WrapError(err, httpErr.ErrBadRequest.WithMessage("invalid schedule ID")))
+		return
+	}
+
+	execution, err := a.service.ExecuteTask(ctx, taskID, schID)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	execJSON, err := json.Marshal(execution)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(execJSON)
 	if err != nil {
 		httpErr.JSONHandleError(w, err)
 		return

@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/tasker/entities"
 	"github.com/tasker/repo"
 	"github.com/tasker/service"
 	"github.com/tasker/web"
@@ -29,8 +30,13 @@ func main() {
 	//Create repo
 	repo := repo.NewRepository(db)
 
+	//Create Step Runners
+	stepRunners := map[entities.StepType]service.StepRunner{
+		entities.APICallStepType: service.ApiCallerStepRunner{},
+	}
+
 	//Create service
-	srv := service.NewService(repo)
+	srv := service.NewService(repo, stepRunners)
 
 	//Create adapter
 	adapter := web.NewAdapter(srv)
@@ -51,6 +57,7 @@ func main() {
 	r.Route("/task", func(r chi.Router) {
 		r.Post("/", adapter.CreateTask) // POST /articles
 		r.Get("/{taskID}", adapter.GetTask)
+		r.Post("/{taskID}/execute/{scheduleID}", adapter.ExecuteTask)
 	})
 
 	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {

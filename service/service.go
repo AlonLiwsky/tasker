@@ -10,15 +10,18 @@ import (
 type Storage interface {
 	SaveTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
+	SaveExecution(ctx context.Context, exec entities.Execution) (entities.Execution, error)
 }
 
 type Service interface {
 	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
+	ExecuteTask(ctx context.Context, taskID int, scheduleID int) (entities.Execution, error)
 }
 
 type service struct {
-	storage Storage
+	storage     Storage
+	stepRunners map[entities.StepType]StepRunner
 }
 
 func (s service) CreateTask(ctx context.Context, task entities.Task) (entities.Task, error) {
@@ -39,6 +42,9 @@ func (s service) GetTask(ctx context.Context, taskID int) (entities.Task, error)
 	return task, nil
 }
 
-func NewService(str Storage) Service {
-	return service{str}
+func NewService(str Storage, stepRunners map[entities.StepType]StepRunner) Service {
+	if err := validStepRunners(stepRunners); err != nil {
+		panic(fmt.Errorf("error validateing step runners, cannot start system: %w", err))
+	}
+	return service{str, stepRunners}
 }
