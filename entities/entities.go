@@ -64,8 +64,15 @@ func (s Step) IsValid() error {
 	}
 
 	//check for nested failure steps
-	if s.FailureStep != nil && s.FailureStep.FailureStep != nil {
-		return http.WrapError(errors.New("a failure step cant have its own failure step"), http.ErrBadRequest)
+	if s.FailureStep != nil {
+		if s.FailureStep.FailureStep != nil {
+			return http.WrapError(errors.New("a failure step cant have its own failure step"), http.ErrBadRequest)
+		}
+
+		//check for failure validity
+		if err := s.FailureStep.IsValid(); err != nil {
+			return err
+		}
 	}
 
 	return nil

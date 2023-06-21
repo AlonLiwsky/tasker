@@ -158,7 +158,7 @@ func (r repository) GetTask(ctx context.Context, taskID int) (entities.Task, err
 func (r repository) getSteps(ctx context.Context, taskID int) ([]entities.Step, error) {
 	rows, err := r.db.QueryContext(ctx, GetStepsQr, taskID)
 	if err != nil {
-		return nil, fmt.Errorf("getting steps: %w", err)
+		return nil, fmt.Errorf("getting steps from DB: %w", err)
 	}
 
 	failureSteps := map[int]dbStep{}
@@ -186,7 +186,7 @@ func (r repository) getSteps(ctx context.Context, taskID int) ([]entities.Step, 
 			//search it from the map of failure steps of the task
 			fDBStep, found := failureSteps[*DBStep.FailureStep]
 			if !found {
-				return nil, fmt.Errorf("connecting failure steps, could not find failure step %d from step %s", DBStep.FailureStep, DBStep.ID)
+				return nil, fmt.Errorf("connecting failure steps, could not find failure step %d from step %d", *DBStep.FailureStep, DBStep.ID)
 			}
 			//parse it to a real step
 			fStep := fDBStep.toStep()
