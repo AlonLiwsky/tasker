@@ -44,6 +44,7 @@ func (s service) ExecuteTask(ctx context.Context, taskID int, scheduleID int) (e
 		if err != nil {
 			//If it fails, check for failure steps
 			if step.FailureStep != nil {
+				step.FailureStep.Params[LastStepResultKey] = stepResult
 				_, err = s.runStep(ctx, *step.FailureStep)
 				if err == nil {
 					//The failure step run successfully, we finish the execution with a handled failure status

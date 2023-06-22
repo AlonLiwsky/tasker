@@ -31,8 +31,9 @@ func main() {
 	repo := repo.NewRepository(db)
 
 	//Create Step Runners
+	apiCallerStepRunner := service.NewApiCallerStepRunner(http.Client{})
 	stepRunners := map[entities.StepType]service.StepRunner{
-		entities.APICallStepType: service.ApiCallerStepRunner{},
+		entities.APICallStepType: apiCallerStepRunner,
 	}
 
 	//Create service
