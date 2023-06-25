@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -14,30 +15,52 @@ import (
 	"github.com/go-chi/render"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/tasker/entities"
-	"github.com/tasker/repo"
+	apicall2 "github.com/tasker/repo/apicall"
+	"github.com/tasker/repo/executionDB"
+	"github.com/tasker/repo/mgmtDB"
 	"github.com/tasker/service"
+	"github.com/tasker/service/apicall"
+	"github.com/tasker/service/storageread"
+	"github.com/tasker/service/storagewrite"
 	"github.com/tasker/web"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	//Setup DB
-	db, err := setupDB()
+	//Setup sql DB
+	sqlDB, err := setupMgmtDB()
 	if err != nil {
 		panic(err.Error())
 	}
-	defer db.Close()
+	defer sqlDB.Close()
 
-	//Create repo
-	repo := repo.NewRepository(db)
+	//Setup redis DB
+	redis, err := setupExecutionDB()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	//Setup http client
+	httpClient := http.Client{}
+
+	//Create repos
+	mgmtRepo := mgmtDB.NewRepository(sqlDB)
+	executionRepo := executionDB.NewRepository(redis)
+	apicallRepo := apicall2.NewRepository(httpClient)
 
 	//Create Step Runners
-	apiCallerStepRunner := service.NewApiCallerStepRunner(http.Client{})
+	apiCallerStepRunner := apicall.NewStepRunner(apicallRepo)
+	storageReadStepRunner := storageread.NewStepRunner(executionRepo)
+	storageWriteStepRunner := storagewrite.NewStepRunner(executionRepo)
 	stepRunners := map[entities.StepType]service.StepRunner{
-		entities.APICallStepType: apiCallerStepRunner,
+		entities.APICallStepType:      apiCallerStepRunner,
+		entities.StorageReadStepType:  storageReadStepRunner,
+		entities.StorageWriteStepType: storageWriteStepRunner,
 	}
 
 	//Create service
-	srv := service.NewService(repo, stepRunners)
+	srv := service.NewService(mgmtRepo, stepRunners)
 
 	//Create adapter
 	adapter := web.NewAdapter(srv)
@@ -69,7 +92,23 @@ func main() {
 	http.ListenAndServe(":3333", r)
 }
 
-func setupDB() (*sql.DB, error) {
+func setupExecutionDB() (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	// Ping the Redis server to check the connection
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func setupMgmtDB() (*sql.DB, error) {
 	// Connect to database
 	db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/database_name")
 	if err != nil {
@@ -112,8 +151,8 @@ func createTables(db *sql.DB) error {
 	return nil
 }
 
-/* TO DO:
--Continue with get task endpoint
+/* TODO:
+-Save TaskID in the execution
 -Handle idempotency
 -...
 */

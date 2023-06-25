@@ -1,4 +1,4 @@
-package repo
+package mgmtDB
 
 import "github.com/tasker/entities"
 

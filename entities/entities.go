@@ -34,12 +34,16 @@ func (t Task) IsValid() error {
 type StepType string
 
 const (
-	APICallStepType StepType = "api_call"
+	APICallStepType      StepType = "api_call"
+	StorageReadStepType  StepType = "storage_read"
+	StorageWriteStepType StepType = "storage_write"
 )
 
 func GetAllStepTypes() []StepType {
 	return []StepType{
 		APICallStepType,
+		StorageReadStepType,
+		StorageWriteStepType,
 	}
 }
 
@@ -52,10 +56,14 @@ type Step struct {
 }
 
 func (s Step) IsValid() error {
-	validTypes := map[StepType]bool{
-		APICallStepType: true,
+	validStepType := false
+	for _, stepType := range GetAllStepTypes() {
+		if s.Type == stepType {
+			validStepType = true
+		}
 	}
-	if !validTypes[s.Type] {
+
+	if !validStepType {
 		return http.WrapError(errors.New("step must have a valid step type"), http.ErrBadRequest)
 	}
 
@@ -99,6 +107,7 @@ const (
 
 type Execution struct {
 	ID            int `json:"id"`
+	TaskID        int `json:"task_id"`
 	ScheduledTask int `json:"scheduled_task"`
 	//TryNumber            int
 	Status executionStatus `json:"status"`

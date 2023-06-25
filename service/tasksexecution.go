@@ -9,6 +9,7 @@ import (
 )
 
 const LastStepResultKey = "last_step_result"
+const UseLastStepResultKey = "use_last_step_result"
 
 // ExecuteTask
 // TODO: We need to distinguish between system errors and execution errors:

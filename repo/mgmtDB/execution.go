@@ -1,4 +1,4 @@
-package repo
+package mgmtDB
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/tasker/entities"
 )
+
+//TODO: add taskID to the saved execution
 
 const (
 	InsertExecQr = "INSERT INTO execution (scheduled_task_id, status, executed_time) VALUES (?, ?, ?);"
