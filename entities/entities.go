@@ -106,9 +106,10 @@ const (
 )
 
 type Execution struct {
-	ID            int `json:"id"`
-	TaskID        int `json:"task_id"`
-	ScheduledTask int `json:"scheduled_task"`
+	ID               int    `json:"id"`
+	TaskID           int    `json:"task_id"`
+	ScheduledTask    int    `json:"scheduled_task"`
+	IdempotencyToken string `json:"idempotency_token"`
 	//TryNumber            int
 	Status executionStatus `json:"status"`
 	//RequestedTime        time.Time

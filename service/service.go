@@ -11,12 +11,13 @@ type Storage interface {
 	SaveTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
 	SaveExecution(ctx context.Context, exec entities.Execution) (entities.Execution, error)
+	GetExecutionIdempotency(ctx context.Context, idempToken string) (entities.Execution, error)
 }
 
 type Service interface {
 	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
-	ExecuteTask(ctx context.Context, taskID int, scheduleID int) (entities.Execution, error)
+	ExecuteTask(ctx context.Context, taskID int, scheduleID int, idempToken string) (entities.Execution, error)
 }
 
 type service struct {

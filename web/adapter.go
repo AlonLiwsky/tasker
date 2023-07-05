@@ -15,7 +15,7 @@ import (
 type Service interface {
 	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
-	ExecuteTask(ctx context.Context, taskID int, scheduleID int) (entities.Execution, error)
+	ExecuteTask(ctx context.Context, taskID int, scheduleID int, idempToken string) (entities.Execution, error)
 }
 
 type adapter struct {
@@ -100,7 +100,19 @@ func (a adapter) ExecuteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	execution, err := a.service.ExecuteTask(ctx, taskID, schID)
+	idempotencyTokenMsg := struct {
+		Token string `json:"idempotency_token"`
+	}{}
+	if err := decode(r, &idempotencyTokenMsg); err != nil {
+		httpErr.JSONHandleError(w, httpErr.WrapError(err, httpErr.ErrBadRequest.WithMessage("invalid idempotency token")))
+		return
+	}
+	if idempotencyTokenMsg.Token == "" {
+		httpErr.JSONHandleError(w, httpErr.ErrBadRequest.WithMessage("invalid idempotency token"))
+		return
+	}
+
+	execution, err := a.service.ExecuteTask(ctx, taskID, schID, idempotencyTokenMsg.Token)
 	if err != nil {
 		httpErr.JSONHandleError(w, err)
 		return

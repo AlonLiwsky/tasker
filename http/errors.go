@@ -73,3 +73,13 @@ func JSONHandleError(w http.ResponseWriter, err error) {
 		http.Error(w, defaultMsg, http.StatusInternalServerError)
 	}
 }
+
+// Im not proud of this
+func IsNotFoundErr(err error) bool {
+	var httpError Error
+	if !errors.As(err, &httpError) {
+		return false
+	}
+	status, _ := httpError.StatusAndMsg()
+	return status == http.StatusNotFound
+}

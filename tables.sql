@@ -30,10 +30,13 @@ CREATE TABLE IF NOT EXISTS scheduled_task (
 CREATE TABLE IF NOT EXISTS execution (
                                          id INT PRIMARY KEY AUTO_INCREMENT,
                                          scheduled_task_id INT,
+                                         task_id INT,
                                          try_number INT,
                                          status VARCHAR(255) NOT NULL,
+                                         idempotency_token CHAR(36),
     requested_time DATETIME,
     executed_time DATETIME,
     last_status_change_time DATETIME,
-    FOREIGN KEY (scheduled_task_id) REFERENCES scheduled_task(id)
+    FOREIGN KEY (scheduled_task_id) REFERENCES scheduled_task(id),
+    FOREIGN KEY (task_id) REFERENCES task(id)
     );

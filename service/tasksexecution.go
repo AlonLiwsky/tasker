@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/tasker/entities"
+	"github.com/tasker/http"
 )
 
 const LastStepResultKey = "last_step_result"
@@ -15,9 +16,17 @@ const UseLastStepResultKey = "use_last_step_result"
 // TODO: We need to distinguish between system errors and execution errors:
 // -check when to throw each one
 // -when and what to save in DB
-// -rollback and idempotency scenarios
-// -finish implementation
-func (s service) ExecuteTask(ctx context.Context, taskID int, scheduleID int) (entities.Execution, error) {
+// -rollback scenarios
+func (s service) ExecuteTask(ctx context.Context, taskID int, scheduleID int, idempToken string) (entities.Execution, error) {
+	//Check idempotency
+	exec, err := s.storage.GetExecutionIdempotency(ctx, idempToken)
+	switch {
+	case err != nil && !http.IsNotFoundErr(err):
+		return entities.Execution{}, fmt.Errorf("checking idempotency: %w", err)
+	case exec != (entities.Execution{}): //Already executed, return result
+		return exec, nil
+	}
+
 	//Get task from storage
 	task, err := s.storage.GetTask(ctx, taskID)
 	if err != nil {
@@ -25,10 +34,12 @@ func (s service) ExecuteTask(ctx context.Context, taskID int, scheduleID int) (e
 	}
 
 	//Initialize execution values with success status
-	exec := entities.Execution{
-		Status:        entities.SuccessExecutionStatus,
-		ScheduledTask: scheduleID,
-		ExecutedTime:  time.Now(),
+	exec = entities.Execution{
+		Status:           entities.SuccessExecutionStatus,
+		ScheduledTask:    scheduleID,
+		TaskID:           taskID,
+		IdempotencyToken: idempToken,
+		ExecutedTime:     time.Now(),
 	}
 
 	var stepResult string
