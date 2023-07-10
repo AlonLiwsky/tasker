@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/tasker/http"
+
+	"github.com/robfig/cron/v3"
 )
 
 type Task struct {
@@ -87,14 +89,23 @@ func (s Step) IsValid() error {
 }
 
 type ScheduledTask struct {
-	ID          int
-	Name        string
-	Chron       string
-	RetryPolicy string
-	Task        *Task
-	Enabled     bool
-	LastRun     time.Time
-	FirstRun    time.Time
+	ID       int
+	Name     string
+	Cron     string
+	Retries  int
+	Task     Task
+	Enabled  bool
+	LastRun  time.Time
+	FirstRun time.Time
+}
+
+func (s ScheduledTask) IsValid() error {
+	//Check valid cron
+	parser := cron.NewParser(0)
+	if _, err := parser.Parse(s.Cron); err != nil {
+		return http.WrapError(err, http.ErrBadRequest.WithMessage(err.Error()))
+	}
+	return nil
 }
 
 type executionStatus string

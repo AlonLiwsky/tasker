@@ -84,6 +84,14 @@ func main() {
 		r.Post("/{taskID}/execute/{scheduleID}", adapter.ExecuteTask)
 	})
 
+	r.Route("/schedule", func(r chi.Router) {
+		r.Post("/", adapter.CreateSchedule) // POST /articles
+	})
+
+	r.Route("/jobs", func(r chi.Router) {
+		r.Post("/execute-scheduled-tasks", adapter.ExecuteScheduledTasks) // POST /articles
+	})
+
 	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		fmt.Printf("%s %s\n", method, route)
 		return nil
@@ -150,9 +158,3 @@ func createTables(db *sql.DB) error {
 
 	return nil
 }
-
-/* TODO:
--Save TaskID in the execution
--Handle idempotency
--...
-*/

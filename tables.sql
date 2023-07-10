@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS step (
 CREATE TABLE IF NOT EXISTS scheduled_task (
                                               id INT PRIMARY KEY AUTO_INCREMENT,
                                               name VARCHAR(255) NOT NULL,
-    chron VARCHAR(255) NOT NULL,
-    retry_policy VARCHAR(255),
+    cron VARCHAR(255) NOT NULL,
+    retries int NOT NULL,
     task_id INT NOT NULL,
     enabled BOOLEAN NOT NULL,
     last_run DATETIME,

@@ -16,6 +16,8 @@ type Service interface {
 	CreateTask(ctx context.Context, task entities.Task) (entities.Task, error)
 	GetTask(ctx context.Context, taskID int) (entities.Task, error)
 	ExecuteTask(ctx context.Context, taskID int, scheduleID int, idempToken string) (entities.Execution, error)
+	CreateSchedule(ctx context.Context, sch entities.ScheduledTask) (entities.ScheduledTask, error)
+	ExecuteScheduledTasks(ctx context.Context) error
 }
 
 type adapter struct {
@@ -124,8 +126,65 @@ func (a adapter) ExecuteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(execJSON)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+}
+
+func (a adapter) CreateSchedule(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	receivedSchedule := ScheduledTask{}
+	if err := decode(r, &receivedSchedule); err != nil {
+		httpErr.JSONHandleError(w, httpErr.WrapError(err, httpErr.ErrBadRequest))
+		return
+	}
+	sch := entities.ScheduledTask{
+		Name:    receivedSchedule.Name,
+		Cron:    receivedSchedule.Cron,
+		Retries: receivedSchedule.Retries,
+		Task:    &entities.Task{ID: receivedSchedule.TaskID},
+		Enabled: receivedSchedule.Enabled,
+	}
+
+	if err := sch.IsValid(); err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	sch, err := a.service.CreateSchedule(ctx, sch)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	schJSON, err := json.Marshal(sch)
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write([]byte(fmt.Sprintf(`{"msg": "schedule saved successfully", "schedule": %s}`, schJSON)))
+	if err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+}
+
+func (a adapter) ExecuteScheduledTasks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if err := a.service.ExecuteScheduledTasks(ctx); err != nil {
+		httpErr.JSONHandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte("scheduled tasks execution finished successfully"))
 	if err != nil {
 		httpErr.JSONHandleError(w, err)
 		return
