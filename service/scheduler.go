@@ -47,7 +47,7 @@ func (s service) ExecuteScheduledTasks(ctx context.Context) error {
 	}
 }
 
-func (s service) ExecuteScheduleTask(ctx context.Context, sch entities.ScheduledTask) func() {
+func (s service) ExecuteScheduleTask(ctx context.Context, sch entities.ScheduledTask) {
 	var err error
 	for i := 0; i < sch.Retries; i++ {
 		_, err = s.ExecuteTask(ctx, sch.Task.ID, sch.ID, uuid.New().String())
@@ -59,5 +59,4 @@ func (s service) ExecuteScheduleTask(ctx context.Context, sch entities.Scheduled
 	if err := s.storage.SetScheduleLastRun(ctx, sch.ID, time.Now()); err != nil {
 		log.Printf("Error setting scheduled_task last_run date for schedule %d: %s", sch.ID, err)
 	}
-
 }
