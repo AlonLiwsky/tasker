@@ -47,10 +47,14 @@ func (s service) ExecuteScheduledTasks(ctx context.Context) error {
 	}
 }
 
+const taskExecutionWaitTime = time.Second * 30
+
 func (s service) ExecuteScheduleTask(ctx context.Context, sch entities.ScheduledTask) {
 	var err error
 	for i := 0; i < sch.Retries; i++ {
-		_, err = s.ExecuteTask(ctx, sch.Task.ID, sch.ID, uuid.New().String())
+		//Set context with time out to prevent that the execution runs for undefined periods (while still creating other goroutines)
+		ctxWithTimeOut, _ := context.WithTimeout(ctx, taskExecutionWaitTime)
+		_, err = s.ExecuteTask(ctxWithTimeOut, sch.Task.ID, sch.ID, uuid.New().String())
 		if err == nil {
 			break
 		}

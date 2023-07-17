@@ -95,13 +95,13 @@ type ScheduledTask struct {
 	Retries  int
 	Task     Task
 	Enabled  bool
-	LastRun  time.Time
-	FirstRun time.Time
+	LastRun  *time.Time
+	FirstRun *time.Time
 }
 
 func (s ScheduledTask) IsValid() error {
 	//Check valid cron
-	parser := cron.NewParser(0)
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	if _, err := parser.Parse(s.Cron); err != nil {
 		return http.WrapError(err, http.ErrBadRequest.WithMessage(err.Error()))
 	}

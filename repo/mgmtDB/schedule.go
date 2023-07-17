@@ -47,22 +47,13 @@ func (r repository) GetEnabledSchedules(ctx context.Context) ([]entities.Schedul
 	var schs []entities.ScheduledTask
 	for rows.Next() {
 		sch := entities.ScheduledTask{}
-		var lastRunStr, firstRunStr string
+		var lastRunStr, firstRunStr *string
 		err = rows.Scan(&sch.ID, &sch.Name, &sch.Cron, &sch.Retries, &sch.Task.ID, &sch.Enabled, &lastRunStr, &firstRunStr)
 		if err != nil {
 			return nil, fmt.Errorf("scanning schedule: %w", err)
 		}
 
-		firstRun, err := time.Parse(time.DateTime, firstRunStr)
-		if err != nil {
-			log.Printf("Error unmarshalling JSON: %s. unmarshalling first_run", err)
-		}
-		lastRun, err := time.Parse(time.DateTime, lastRunStr)
-		if err != nil {
-			log.Printf("Error unmarshalling JSON: %s. unmarshalling last_run", err)
-		}
-		sch.FirstRun = firstRun
-		sch.LastRun = lastRun
+		sch.FirstRun, sch.LastRun = parseDates(firstRunStr, lastRunStr)
 
 		sch.Task, err = r.GetTask(ctx, sch.Task.ID)
 		if err != nil {
@@ -76,6 +67,25 @@ func (r repository) GetEnabledSchedules(ctx context.Context) ([]entities.Schedul
 	}
 
 	return schs, nil
+}
+
+func parseDates(firstRunStr, lastRunStr *string) (*time.Time, *time.Time) {
+	var firstRunPtr, lastRunPtr *time.Time
+	if firstRunStr != nil {
+		firstRun, err := time.Parse(time.DateTime, *firstRunStr)
+		if err != nil {
+			log.Printf("Error unmarshalling JSON: %s. unmarshalling first_run", err)
+		}
+		firstRunPtr = &firstRun
+	}
+	if lastRunStr != nil {
+		lastRun, err := time.Parse(time.DateTime, *lastRunStr)
+		if err != nil {
+			log.Printf("Error unmarshalling JSON: %s. unmarshalling last_run", err)
+		}
+		lastRunPtr = &lastRun
+	}
+	return firstRunPtr, lastRunPtr
 }
 
 func (r repository) SetScheduleLastRun(ctx context.Context, schID int, time time.Time) error {

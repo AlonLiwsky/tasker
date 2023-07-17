@@ -146,7 +146,7 @@ func (a adapter) CreateSchedule(w http.ResponseWriter, r *http.Request) {
 		Name:    receivedSchedule.Name,
 		Cron:    receivedSchedule.Cron,
 		Retries: receivedSchedule.Retries,
-		Task:    &entities.Task{ID: receivedSchedule.TaskID},
+		Task:    entities.Task{ID: receivedSchedule.TaskID},
 		Enabled: receivedSchedule.Enabled,
 	}
 
