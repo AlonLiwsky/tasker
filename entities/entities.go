@@ -126,6 +126,7 @@ type Execution struct {
 	//RequestedTime        time.Time
 	ExecutedTime time.Time `json:"executed_time"`
 	//LastStatusChangeTime time.Time
+	//TODO: add ErrorMsg
 }
 
 /*

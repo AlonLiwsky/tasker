@@ -24,6 +24,7 @@ func (m *MockStorage) GetTask(ctx context.Context, taskID int) (entities.Task, e
 }
 
 func (m *MockStorage) SaveExecution(ctx context.Context, exec entities.Execution) (entities.Execution, error) {
+	exec.ExecutedTime = time.Time{} //override executed time with zero time to fulfill tests
 	args := m.Called(ctx, exec)
 	return args.Get(0).(entities.Execution), args.Error(1)
 }
@@ -46,4 +47,14 @@ func (m *MockStorage) GetEnabledSchedules(ctx context.Context) ([]entities.Sched
 func (m *MockStorage) SetScheduleLastRun(ctx context.Context, schID int, time time.Time) error {
 	args := m.Called(ctx, schID, time)
 	return args.Error(0)
+}
+
+// MockStorage is a mock implementation of the StepRunner interface
+type MockStepRunner struct {
+	mock.Mock
+}
+
+func (m MockStepRunner) RunStep(ctx context.Context, params map[string]string) (string, error) {
+	args := m.Called(ctx, params)
+	return args.Get(0).(string), args.Error(1)
 }
